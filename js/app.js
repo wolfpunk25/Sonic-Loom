@@ -1,4 +1,11 @@
-import { initAudioEngine, getContext, resumeAudio, setMasterVolume, syncAllTracks } from "./audio-engine.js";
+import {
+  initAudioEngine,
+  getContext,
+  resumeAudio,
+  setMasterVolume,
+  syncAllTracks,
+  setMasterPlaybackRate,
+} from "./audio-engine.js";
 import { Track, PARAM_RANGES } from "./track.js";
 import { Knob } from "./ui-knob.js";
 import { loadDemoSample, DEMO_SAMPLES } from "./samples.js";
@@ -16,6 +23,12 @@ const mixKnobs = {}; // mixKnobs[trackIndex][paramId] -> Knob (permanent)
 let detailKnobs = {}; // rebuilt each time the detail panel re-renders
 let currentWaveformCanvas = null;
 let currentFileForTrack = {}; // trackIndex -> File
+
+// Slider is 0..1, centered at 0.5 = 1x. Exponential so each side spans one
+// octave: 0 -> 0.5x (half speed), 1 -> 2x (double speed).
+function speedNormToRate(norm) {
+  return Math.pow(2, (norm - 0.5) * 2);
+}
 let currentDemoForTrack = {};
 
 function paramToReal(id, norm) {
@@ -445,6 +458,21 @@ async function boot() {
   setMasterVolume(0.9);
 
   document.getElementById("sync-btn").addEventListener("click", () => syncAllTracks());
+
+  const speedSlider = document.getElementById("master-speed");
+  const speedValueEl = document.getElementById("master-speed-value");
+  const applySpeed = () => {
+    const norm = Number(speedSlider.value);
+    const rate = speedNormToRate(norm);
+    setMasterPlaybackRate(rate);
+    speedValueEl.textContent = rate.toFixed(2) + "x";
+  };
+  speedSlider.addEventListener("input", applySpeed);
+  speedSlider.addEventListener("dblclick", () => {
+    speedSlider.value = 0.5;
+    applySpeed();
+  });
+  applySpeed();
 
   requestAnimationFrame(tick);
 }

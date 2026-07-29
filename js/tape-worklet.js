@@ -2,6 +2,10 @@
 // first pass records a loop of arbitrary length, subsequent passes overdub
 // on top of it while it keeps playing, like a hardware looper/tape machine.
 class TapeProcessor extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [{ name: "playbackRate", defaultValue: 1, minValue: 0.1, maxValue: 8, automationRate: "k-rate" }];
+  }
+
   constructor() {
     super();
     this.maxSamples = Math.floor(sampleRate * 30); // 30s cap per track
@@ -72,7 +76,7 @@ class TapeProcessor extends AudioWorkletProcessor {
     }
   }
 
-  process(inputs, outputs) {
+  process(inputs, outputs, parameters) {
     const input = inputs[0];
     const output = outputs[0];
     const outL = output[0];
@@ -81,15 +85,28 @@ class TapeProcessor extends AudioWorkletProcessor {
     const inR = (input && input[1]) || inL;
     const n = outL.length;
 
+    // Varispeed only applies to pure playback — recording/overdub always
+    // advance at real-time rate so captured audio and timing stay accurate.
+    const rate = this.recording ? 1 : parameters.playbackRate[0];
+
     for (let i = 0; i < n; i++) {
       const sIn = inL ? inL[i] : 0;
       const sInR = inR ? inR[i] : sIn;
 
+      const i0 = Math.floor(this.pos);
+      const frac = this.pos - i0;
+
       let existingL = 0;
       let existingR = 0;
       if (this.lengthSet && (this.playing || this.recording)) {
-        existingL = this.bufL[this.pos];
-        existingR = this.bufR[this.pos];
+        if (rate === 1) {
+          existingL = this.bufL[i0];
+          existingR = this.bufR[i0];
+        } else {
+          const i1 = (i0 + 1) % this.length;
+          existingL = this.bufL[i0] * (1 - frac) + this.bufL[i1] * frac;
+          existingR = this.bufR[i0] * (1 - frac) + this.bufR[i1] * frac;
+        }
       }
 
       let oL = existingL;
@@ -97,9 +114,9 @@ class TapeProcessor extends AudioWorkletProcessor {
 
       if (this.recording) {
         if (this.firstPass) {
-          if (this.pos < this.maxSamples) {
-            this.bufL[this.pos] = sIn;
-            this.bufR[this.pos] = sInR;
+          if (i0 < this.maxSamples) {
+            this.bufL[i0] = sIn;
+            this.bufR[i0] = sInR;
           }
           oL = sIn;
           oR = sInR;
@@ -107,8 +124,8 @@ class TapeProcessor extends AudioWorkletProcessor {
           const decay = 0.97; // gentle decay keeps repeated overdubs from piling up forever
           const newL = existingL * decay + sIn;
           const newR = existingR * decay + sInR;
-          this.bufL[this.pos] = newL;
-          this.bufR[this.pos] = newR;
+          this.bufL[i0] = newL;
+          this.bufR[i0] = newR;
           oL = newL;
           oR = newR;
         }
@@ -118,9 +135,10 @@ class TapeProcessor extends AudioWorkletProcessor {
       if (outR) outR[i] = oR;
 
       if (this.recording || this.playing) {
-        this.pos++;
+        this.pos += rate;
         if (this.lengthSet) {
-          if (this.pos >= this.length) this.pos = 0;
+          while (this.pos >= this.length) this.pos -= this.length;
+          while (this.pos < 0) this.pos += this.length;
         } else if (this.pos >= this.maxSamples) {
           this.pos = this.maxSamples - 1;
         }
@@ -131,7 +149,7 @@ class TapeProcessor extends AudioWorkletProcessor {
     if (this._statusCounter >= 10) {
       this._statusCounter = 0;
       this.port.postMessage({
-        pos: this.pos,
+        pos: Math.floor(this.pos),
         length: this.length,
         lengthSet: this.lengthSet,
         recording: this.recording,

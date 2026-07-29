@@ -53,3 +53,7 @@ export function registerTrack(track) {
 export function syncAllTracks() {
   for (const t of tracks) t.seekToStart();
 }
+
+export function setMasterPlaybackRate(rate) {
+  for (const t of tracks) t.setPlaybackRate(rate);
+}

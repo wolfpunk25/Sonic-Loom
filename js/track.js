@@ -200,6 +200,11 @@ export class Track {
     this.filterStage.filter.type = type;
   }
 
+  setPlaybackRate(rate) {
+    const param = this.tapeNode.parameters.get("playbackRate");
+    param.setTargetAtTime(rate, this.ctx.currentTime, 0.05);
+  }
+
   setFreeze(on) {
     this.freezeEnabled = on;
     this.spaceStage.setFreeze(on);
