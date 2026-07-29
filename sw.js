@@ -1,4 +1,4 @@
-const CACHE_NAME = "sonic-loom-v2";
+const CACHE_NAME = "sonic-loom-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,11 +16,11 @@ const APP_SHELL = [
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
   "./assets/icons/icon-maskable-512.png",
-  "./assets/icons/apple-touch-icon.png",
-  "./assets/samples/kick.wav",
-  "./assets/samples/hat.wav",
-  "./assets/samples/pluck.wav",
-  "./assets/samples/pad.wav"
+  "./assets/icons/apple-touch-icon.png"
+  // Sample files aren't precached here on purpose — the list changes over
+  // time, and cache.addAll fails installation entirely if any one entry
+  // 404s. They're still cached for offline use the first time each is
+  // actually loaded, via the asset branch of the fetch handler below.
 ];
 
 self.addEventListener("install", (event) => {
