@@ -36,6 +36,8 @@
   </div>
 
   <div class="master-controls">
+    <button id="play-all-btn" class="btn btn-ghost" title="Play every track that has content">Play All</button>
+    <button id="stop-all-btn" class="btn btn-ghost" title="Stop every track">Stop All</button>
     <button id="sync-btn" class="btn btn-ghost" title="Reset all track playheads to the same start point">Sync</button>
   </div>
 </header>
@@ -70,6 +72,24 @@
     <h2 class="view-title">Scenes</h2>
     <p class="view-sub">Capture the current effect &amp; mix state across all tracks, recall it later.</p>
     <div id="scenes-grid" class="scenes-grid"></div>
+  </section>
+
+  <section class="master-fx">
+    <h2 class="view-title">Master FX</h2>
+    <p class="view-sub">Live on the master output, for performing the mix — filter sweeps, grit, wash it out with reverb.</p>
+    <div class="row">
+      <select id="master-filter-type">
+        <option value="lowpass">Low</option>
+        <option value="highpass">High</option>
+        <option value="bandpass">Band</option>
+      </select>
+    </div>
+    <div class="knob-row">
+      <div class="knob-slot" id="master-filter-freq-knob" data-label="Cutoff"></div>
+      <div class="knob-slot" id="master-filter-q-knob" data-label="Res"></div>
+      <div class="knob-slot" id="master-drive-knob" data-label="Drive"></div>
+      <div class="knob-slot" id="master-reverb-knob" data-label="Reverb"></div>
+    </div>
   </section>
 
 </main>

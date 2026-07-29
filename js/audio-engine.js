@@ -1,6 +1,12 @@
-// Shared AudioContext, master bus, mic access and sync — one instance for the whole app.
+// Shared AudioContext, master bus + master FX chain, mic access and sync — one instance for the whole app.
+import { buildFilterStage, buildColorStage, buildSpaceStage } from "./effects.js";
+
 let ctx = null;
-let masterGain = null;
+let masterBus = null; // all tracks sum together here (pre-FX)
+let masterFilterStage = null;
+let masterColorStage = null;
+let masterSpaceStage = null;
+let masterGain = null; // final volume stage (post-FX)
 let micStreamPromise = null;
 const tracks = [];
 
@@ -9,9 +15,26 @@ export async function initAudioEngine() {
   ctx = new (window.AudioContext || window.webkitAudioContext)();
   await ctx.audioWorklet.addModule("js/tape-worklet.js");
   await ctx.audioWorklet.addModule("js/granular.js");
+
+  masterBus = ctx.createGain();
+  masterBus.gain.value = 1;
+
+  masterFilterStage = buildFilterStage(ctx);
+  masterFilterStage.filter.frequency.value = 20000; // wide open until you turn the knob
+  masterFilterStage.filter.Q.value = 0.7;
+
+  masterColorStage = buildColorStage(ctx); // drive defaults to 0 (bypassed)
+  masterSpaceStage = buildSpaceStage(ctx); // reverb/delay wet default to 0 (bypassed)
+
   masterGain = ctx.createGain();
   masterGain.gain.value = 0.9;
+
+  masterBus.connect(masterFilterStage.filter);
+  masterFilterStage.filter.connect(masterColorStage.input);
+  masterColorStage.output.connect(masterSpaceStage.input);
+  masterSpaceStage.output.connect(masterGain);
   masterGain.connect(ctx.destination);
+
   return ctx;
 }
 
@@ -19,8 +42,24 @@ export function getContext() {
   return ctx;
 }
 
+export function getMasterBus() {
+  return masterBus;
+}
+
 export function getMasterGain() {
   return masterGain;
+}
+
+export function getMasterFilterStage() {
+  return masterFilterStage;
+}
+
+export function getMasterColorStage() {
+  return masterColorStage;
+}
+
+export function getMasterSpaceStage() {
+  return masterSpaceStage;
 }
 
 export async function resumeAudio() {
@@ -60,4 +99,12 @@ export function syncAllTracks() {
 
 export function setMasterPlaybackRate(rate) {
   for (const t of tracks) t.setPlaybackRate(rate);
+}
+
+export function playAllTracks() {
+  for (const t of tracks) if (t.hasContent) t.play();
+}
+
+export function stopAllTracks() {
+  for (const t of tracks) t.stop();
 }

@@ -193,6 +193,13 @@ main { padding: 12px 16px calc(24px + var(--safe-bottom)); max-width: 1100px; ma
 .view-title { font-size: 1.1rem; margin-bottom: 4px; }
 .view-sub { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 14px; }
 
+.master-fx {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.master-fx .row { margin-bottom: 14px; }
+
 /* Track detail panel */
 .track-panel {
   background: var(--panel);

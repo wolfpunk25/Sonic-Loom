@@ -5,6 +5,11 @@ import {
   setMasterVolume,
   syncAllTracks,
   setMasterPlaybackRate,
+  playAllTracks,
+  stopAllTracks,
+  getMasterFilterStage,
+  getMasterColorStage,
+  getMasterSpaceStage,
 } from "./audio-engine.js";
 import { Track, PARAM_RANGES } from "./track.js";
 import { Knob } from "./ui-knob.js";
@@ -350,6 +355,65 @@ function bindViewTabs() {
   });
 }
 
+// ---------------- Master FX ----------------
+
+const MASTER_FILTER_FREQ_RANGE = [40, 20000];
+
+function masterNormToFreq(norm) {
+  const [lo, hi] = MASTER_FILTER_FREQ_RANGE;
+  return Math.exp(Math.log(lo) + (Math.log(hi) - Math.log(lo)) * norm);
+}
+
+function masterFreqToNorm(freq) {
+  const [lo, hi] = MASTER_FILTER_FREQ_RANGE;
+  return (Math.log(freq) - Math.log(lo)) / (Math.log(hi) - Math.log(lo));
+}
+
+function formatFreq(freq) {
+  return freq >= 1000 ? (freq / 1000).toFixed(1) + "k" : Math.round(freq);
+}
+
+function setupMasterFx() {
+  const ctx = getContext();
+  const filterStage = getMasterFilterStage();
+  const colorStage = getMasterColorStage();
+  const spaceStage = getMasterSpaceStage();
+
+  const typeSelect = document.getElementById("master-filter-type");
+  typeSelect.value = filterStage.filter.type;
+  typeSelect.addEventListener("change", () => {
+    filterStage.filter.type = typeSelect.value;
+  });
+
+  new Knob(document.getElementById("master-filter-freq-knob"), {
+    label: "Cutoff",
+    value: masterFreqToNorm(filterStage.filter.frequency.value),
+    format: (v) => formatFreq(masterNormToFreq(v)),
+    onChange: (v) => filterStage.filter.frequency.setTargetAtTime(masterNormToFreq(v), ctx.currentTime, 0.03),
+  });
+
+  new Knob(document.getElementById("master-filter-q-knob"), {
+    label: "Res",
+    value: (filterStage.filter.Q.value - 0.1) / 14.9,
+    format: (v) => (0.1 + v * 14.9).toFixed(1),
+    onChange: (v) => filterStage.filter.Q.setTargetAtTime(0.1 + v * 14.9, ctx.currentTime, 0.03),
+  });
+
+  new Knob(document.getElementById("master-drive-knob"), {
+    label: "Drive",
+    value: 0,
+    format: (v) => Math.round(v * 100) + "%",
+    onChange: (v) => colorStage.setDrive(v),
+  });
+
+  new Knob(document.getElementById("master-reverb-knob"), {
+    label: "Reverb",
+    value: 0,
+    format: (v) => Math.round(v * 100) + "%",
+    onChange: (v) => spaceStage.reverbWet.gain.setTargetAtTime(v, ctx.currentTime, 0.03),
+  });
+}
+
 // ---------------- Animation loop: meters, waveform, transport visuals ----------------
 
 function formatTime(samples, rate) {
@@ -479,6 +543,8 @@ async function boot() {
   volumeSlider.addEventListener("input", applyVolume);
   applyVolume();
 
+  document.getElementById("play-all-btn").addEventListener("click", () => playAllTracks());
+  document.getElementById("stop-all-btn").addEventListener("click", () => stopAllTracks());
   document.getElementById("sync-btn").addEventListener("click", () => syncAllTracks());
 
   const speedSlider = document.getElementById("master-speed");
@@ -495,6 +561,8 @@ async function boot() {
     applySpeed();
   });
   applySpeed();
+
+  setupMasterFx();
 
   requestAnimationFrame(tick);
 }

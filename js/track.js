@@ -1,4 +1,4 @@
-import { getMicStream, getMasterGain, registerTrack } from "./audio-engine.js";
+import { getMicStream, getMasterBus, registerTrack } from "./audio-engine.js";
 import { buildFilterStage, buildColorStage, buildSpaceStage } from "./effects.js";
 
 const PARAM_RANGES = {
@@ -110,7 +110,7 @@ export class Track {
     this.spaceStage.output.connect(this.panNode);
     this.panNode.connect(this.volumeGain);
     this.volumeGain.connect(this.analyser);
-    this.analyser.connect(getMasterGain());
+    this.analyser.connect(getMasterBus());
 
     // apply defaults — skip "macro" here too: it's a meta-control that derives
     // and overwrites grainMix/filterFreq/reverbAmount, so applying its default

@@ -58,7 +58,13 @@ export class Knob {
       dragging = true;
       startY = e.clientY;
       startValue = this.value;
-      this.knobEl.setPointerCapture && this.knobEl.setPointerCapture(e.pointerId);
+      try {
+        this.knobEl.setPointerCapture && this.knobEl.setPointerCapture(e.pointerId);
+      } catch {
+        // pointer capture is a nice-to-have (keeps the drag going if the
+        // pointer leaves the element); the window-level listeners below
+        // are enough on their own, so a capture failure shouldn't be fatal.
+      }
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
       e.preventDefault();
