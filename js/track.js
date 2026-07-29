@@ -59,6 +59,7 @@ export class Track {
 
     this.hasContent = false;
     this.isRecording = false;
+    this.recordMode = null; // "record" | "overdub" | null — which button started the current take
     this.isOverdub = false;
     this.isPlaying = false;
     this.isMuted = false;
@@ -107,8 +108,13 @@ export class Track {
     this.volumeGain.connect(this.analyser);
     this.analyser.connect(getMasterGain());
 
-    // apply defaults
-    for (const id of Object.keys(this.params)) this.setParam(id, this.params[id], true);
+    // apply defaults — skip "macro" here too: it's a meta-control that derives
+    // and overwrites grainMix/filterFreq/reverbAmount, so applying its default
+    // (0) would clobber the real defaults those three params already have.
+    for (const id of Object.keys(this.params)) {
+      if (id === "macro") continue;
+      this.setParam(id, this.params[id], true);
+    }
 
     registerTrack(this);
   }
@@ -118,6 +124,7 @@ export class Track {
     this.hasContent = status.lengthSet;
     this.isPlaying = status.playing;
     this.isRecording = status.recording;
+    if (!status.recording) this.recordMode = null;
   }
 
   // ---- params ----
@@ -260,6 +267,7 @@ export class Track {
     this.tapeNode.port.postMessage({ type: "clear" });
     this.tapeNode.port.postMessage({ type: "start-record" });
     this.isRecording = true;
+    this.recordMode = "record";
   }
 
   async startOverdub() {
@@ -273,11 +281,13 @@ export class Track {
     this.micError = null;
     this.tapeNode.port.postMessage({ type: "start-record" });
     this.isRecording = true;
+    this.recordMode = "overdub";
   }
 
   stopRecord() {
     this.tapeNode.port.postMessage({ type: "stop-record" });
     this.isRecording = false;
+    this.recordMode = null;
   }
 
   play() {
@@ -286,11 +296,13 @@ export class Track {
 
   stop() {
     this.tapeNode.port.postMessage({ type: "stop" });
+    this.recordMode = null;
   }
 
   clear() {
     this.tapeNode.port.postMessage({ type: "clear" });
     this.hasContent = false;
+    this.recordMode = null;
   }
 
   seekToStart() {

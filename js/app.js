@@ -148,6 +148,17 @@ function updateFocusHighlight() {
   });
 }
 
+function alertIfMicError(t) {
+  if (!t.micError) return;
+  alert(
+    `Couldn't access the microphone on ${t.name}: ${t.micError.name || t.micError}.\n\n` +
+      "Check Settings > Privacy & Security > Microphone (or Safari's site settings) and make sure this app is allowed."
+  );
+}
+
+// Used by the compact mini-strip button, which has no separate Overdub
+// control: smart-toggles between a fresh take and layering onto existing
+// content depending on whether the track already has something recorded.
 async function toggleRecord(i) {
   const t = tracks[i];
   if (t.isRecording) {
@@ -157,12 +168,7 @@ async function toggleRecord(i) {
   } else {
     await t.startOverdub();
   }
-  if (t.micError) {
-    alert(
-      `Couldn't access the microphone on ${t.name}: ${t.micError.name || t.micError}.\n\n` +
-        "Check Settings > Privacy & Security > Microphone (or Safari's site settings) and make sure this app is allowed."
-    );
-  }
+  alertIfMicError(t);
 }
 
 function togglePlay(i) {
@@ -242,12 +248,21 @@ function renderTrackDetail(i) {
   });
 
   recBtn.addEventListener("click", async () => {
-    await toggleRecord(i);
+    if (t.isRecording) {
+      t.stopRecord();
+    } else {
+      await t.startRecord(); // always a fresh take — clears any existing content
+    }
+    alertIfMicError(t);
   });
   overdubBtn.addEventListener("click", async () => {
+    if (t.isRecording) {
+      t.stopRecord();
+      return;
+    }
     if (!t.hasContent) return;
-    if (t.isRecording) t.stopRecord();
-    else await t.startOverdub();
+    await t.startOverdub();
+    alertIfMicError(t);
   });
   playBtn.addEventListener("click", () => togglePlay(i));
   clearBtn.addEventListener("click", () => t.clear());
@@ -367,12 +382,18 @@ function tick() {
     if (i === focusedTrackIndex) {
       const panel = document.querySelector(`.track-panel[data-track="${i}"]`);
       if (panel) {
+        const recActive = t.isRecording && t.recordMode === "record";
+        const overdubActive = t.isRecording && t.recordMode === "overdub";
+
         const recBtn = panel.querySelector(".rec-btn");
-        recBtn.classList.toggle("armed", t.isRecording);
-        recBtn.textContent = t.isRecording ? "Stop" : "Record";
+        recBtn.classList.toggle("armed", recActive);
+        recBtn.textContent = recActive ? "Stop" : "Record";
+        recBtn.disabled = overdubActive;
+
         const overdubBtn = panel.querySelector(".overdub-btn");
-        overdubBtn.classList.toggle("armed", t.isRecording);
-        overdubBtn.textContent = t.isRecording ? "Stop" : "Overdub";
+        overdubBtn.classList.toggle("armed", overdubActive);
+        overdubBtn.textContent = overdubActive ? "Stop" : "Overdub";
+        overdubBtn.disabled = recActive || (!t.isRecording && !t.hasContent);
         panel.querySelector(".play-btn").classList.toggle("active-state", t.isPlaying);
         const status = t.lastStatus;
         const statusEl = panel.querySelector(".loop-status");
