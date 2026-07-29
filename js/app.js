@@ -154,6 +154,12 @@ async function toggleRecord(i) {
 
 function togglePlay(i) {
   const t = tracks[i];
+  if (t.isRecording) {
+    // finishing a take via Play is a natural gesture too — it behaves the
+    // same as pressing Record/Overdub again: finalize the loop and play it.
+    t.stopRecord();
+    return;
+  }
   if (t.isPlaying) t.stop();
   else t.play();
 }
@@ -339,14 +345,21 @@ function tick() {
 
     const miniEl = document.querySelector(`.track-mini[data-track="${i}"]`);
     if (miniEl) {
-      miniEl.querySelector(".rec").classList.toggle("armed", t.isRecording);
+      const miniRec = miniEl.querySelector(".rec");
+      miniRec.classList.toggle("armed", t.isRecording);
+      miniRec.textContent = t.isRecording ? "■" : "●";
       miniEl.querySelector(".play").classList.toggle("active-state", t.isPlaying);
     }
 
     if (i === focusedTrackIndex) {
       const panel = document.querySelector(`.track-panel[data-track="${i}"]`);
       if (panel) {
-        panel.querySelector(".rec-btn").classList.toggle("armed", t.isRecording);
+        const recBtn = panel.querySelector(".rec-btn");
+        recBtn.classList.toggle("armed", t.isRecording);
+        recBtn.textContent = t.isRecording ? "Stop" : "Record";
+        const overdubBtn = panel.querySelector(".overdub-btn");
+        overdubBtn.classList.toggle("armed", t.isRecording);
+        overdubBtn.textContent = t.isRecording ? "Stop" : "Overdub";
         panel.querySelector(".play-btn").classList.toggle("active-state", t.isPlaying);
         const status = t.lastStatus;
         const statusEl = panel.querySelector(".loop-status");
