@@ -37,6 +37,11 @@
 
   <div class="master-controls">
     <button id="sync-btn" class="btn btn-ghost" title="Reset all track playheads to the same start point">Sync</button>
+    <div class="tempo-control" title="Assumed tempo for Match Tempo">
+      <label for="tempo-bpm">BPM</label>
+      <input type="number" id="tempo-bpm" min="40" max="240" step="1" value="120" />
+    </div>
+    <button id="match-tempo-btn" class="btn btn-ghost" title="Set each track's playback speed so its loop fits its Beats count at this tempo, then Sync">Match Tempo</button>
   </div>
 </header>
 
@@ -89,6 +94,10 @@
   <div class="track-panel" data-track="">
     <div class="track-panel-head">
       <h2 class="track-title"></h2>
+      <div class="beats-control" title="Assumed number of beats in this recorded loop, used by Match Tempo">
+        <label>Beats</label>
+        <input type="number" class="beats-input" min="1" max="64" step="1" value="4" />
+      </div>
       <div class="loop-status"></div>
     </div>
 

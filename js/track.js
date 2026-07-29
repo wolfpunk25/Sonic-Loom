@@ -74,6 +74,10 @@ export class Track {
     this.freezeEnabled = false;
     this.prevVolumeNorm = DEFAULT_PARAMS.volume;
 
+    this.beatsPerLoop = 4; // assumed beat count of the recorded loop, for tempo matching
+    this._masterRateFactor = 1; // from the master speed slider
+    this._tempoRate = 1; // from Match Tempo, composes with the master factor
+
     this.params = { ...DEFAULT_PARAMS };
 
     this.micSource = null;
@@ -211,9 +215,36 @@ export class Track {
     this.filterStage.filter.type = type;
   }
 
-  setPlaybackRate(rate) {
-    const param = this.tapeNode.parameters.get("playbackRate");
-    param.setTargetAtTime(rate, this.ctx.currentTime, 0.05);
+  // Master speed slider factor — composes with any tempo-match rate below,
+  // so nudging master speed after syncing shifts all tracks together
+  // without breaking their alignment with each other.
+  setPlaybackRate(masterFactor) {
+    this._masterRateFactor = masterFactor;
+    this._applyCombinedRate();
+  }
+
+  // Rate needed so this track's recorded loop occupies exactly beatsPerLoop
+  // beats at the given tempo. Returns 1 (no-op) if there's nothing recorded.
+  computeTempoRate(bpm) {
+    if (!this.lastStatus || !this.lastStatus.lengthSet) return 1;
+    const loopLengthSec = this.lastStatus.length / this.ctx.sampleRate;
+    const targetLoopSec = (this.beatsPerLoop * 60) / bpm;
+    const rate = loopLengthSec / targetLoopSec;
+    return Math.max(0.25, Math.min(4, rate)); // keep it in a musically sane range
+  }
+
+  setTempoRate(rate) {
+    this._tempoRate = rate;
+    this._applyCombinedRate();
+  }
+
+  setBeatsPerLoop(n) {
+    this.beatsPerLoop = Math.max(1, Math.round(n));
+  }
+
+  _applyCombinedRate() {
+    const combined = this._masterRateFactor * this._tempoRate;
+    this.tapeNode.parameters.get("playbackRate").setTargetAtTime(combined, this.ctx.currentTime, 0.05);
   }
 
   setFreeze(on) {
@@ -275,6 +306,7 @@ export class Track {
     this.tapeNode.port.postMessage({ type: "start-record" });
     this.isRecording = true;
     this.recordMode = "record";
+    this.setTempoRate(1); // fresh content — any previous tempo match no longer applies
   }
 
   async startOverdub() {
@@ -310,6 +342,7 @@ export class Track {
     this.tapeNode.port.postMessage({ type: "clear" });
     this.hasContent = false;
     this.recordMode = null;
+    this.setTempoRate(1);
   }
 
   seekToStart() {
@@ -326,6 +359,7 @@ export class Track {
     );
     this.hasContent = true;
     this.isPlaying = true;
+    this.setTempoRate(1);
   }
 
   async loadFile(file) {

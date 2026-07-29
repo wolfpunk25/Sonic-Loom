@@ -200,9 +200,29 @@ main { padding: 12px 16px calc(24px + var(--safe-bottom)); max-width: 1100px; ma
   border-radius: var(--radius);
   padding: 16px;
 }
-.track-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.track-panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
 .track-title { font-size: 1.2rem; }
 .loop-status { font-size: 0.8rem; color: var(--text-dim); }
+
+.beats-control, .tempo-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.beats-control input, .tempo-control input {
+  width: 64px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  text-transform: none;
+}
 
 .waveform {
   width: 100%;
