@@ -1,4 +1,4 @@
-const CACHE_NAME = "sonic-loom-v1";
+const CACHE_NAME = "sonic-loom-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -41,18 +41,37 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
+  const url = new URL(event.request.url);
+  const isStaticAsset = url.pathname.includes("/assets/");
+
+  if (isStaticAsset) {
+    // Icons and samples rarely change once added — cache-first is fine,
+    // and saves re-downloading several MB of samples on every load.
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+  } else {
+    // App shell (HTML/JS/CSS) changes often — always prefer the network so
+    // updates show up on the next reload, falling back to cache offline.
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
-          if (response.ok && response.type === "basic") {
+          if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => cached);
-    })
-  );
+        .catch(() => caches.match(event.request))
+    );
+  }
 });
