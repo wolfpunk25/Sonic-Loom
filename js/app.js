@@ -448,14 +448,15 @@ async function boot() {
   renderScenes();
   bindViewTabs();
 
-  const masterKnobSlot = document.getElementById("master-vol-knob");
-  new Knob(masterKnobSlot, {
-    label: "Master",
-    value: 0.9,
-    format: (v) => Math.round(v * 100) + "%",
-    onChange: (v) => setMasterVolume(v),
-  });
-  setMasterVolume(0.9);
+  const volumeSlider = document.getElementById("master-volume");
+  const volumeValueEl = document.getElementById("master-volume-value");
+  const applyVolume = () => {
+    const v = Number(volumeSlider.value);
+    setMasterVolume(v);
+    volumeValueEl.textContent = Math.round(v * 100) + "%";
+  };
+  volumeSlider.addEventListener("input", applyVolume);
+  applyVolume();
 
   document.getElementById("sync-btn").addEventListener("click", () => syncAllTracks());
 
