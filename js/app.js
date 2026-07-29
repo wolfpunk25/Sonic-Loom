@@ -198,13 +198,6 @@ function renderTrackDetail(i) {
   detailKnobs = {};
   currentWaveformCanvas = node.querySelector(".waveform");
 
-  const beatsInput = node.querySelector(".beats-input");
-  beatsInput.value = t.beatsPerLoop;
-  beatsInput.addEventListener("change", () => {
-    t.setBeatsPerLoop(Number(beatsInput.value) || 4);
-    beatsInput.value = t.beatsPerLoop;
-  });
-
   const sourceSelect = node.querySelector(".source-select");
   const demoSelect = node.querySelector(".demo-select");
   const fileInput = node.querySelector(".file-input");
@@ -487,15 +480,6 @@ async function boot() {
   applyVolume();
 
   document.getElementById("sync-btn").addEventListener("click", () => syncAllTracks());
-
-  document.getElementById("match-tempo-btn").addEventListener("click", () => {
-    const bpm = Number(document.getElementById("tempo-bpm").value) || 120;
-    tracks.forEach((t) => {
-      if (!t.hasContent) return;
-      t.setTempoRate(t.computeTempoRate(bpm));
-    });
-    syncAllTracks(); // realign playheads so downbeats line up under the new rates
-  });
 
   const speedSlider = document.getElementById("master-speed");
   const speedValueEl = document.getElementById("master-speed-value");
