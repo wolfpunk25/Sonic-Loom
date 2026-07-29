@@ -29,8 +29,12 @@ export async function resumeAudio() {
   }
 }
 
+// The slider's 0-100% still maps onto this range — doubled so the top of
+// the slider isn't capped at unity gain (the whole mix was too quiet).
+const MASTER_GAIN_BOOST = 2;
+
 export function setMasterVolume(v) {
-  if (masterGain) masterGain.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
+  if (masterGain) masterGain.gain.setTargetAtTime(v * MASTER_GAIN_BOOST, ctx.currentTime, 0.02);
 }
 
 export async function getMicStream() {

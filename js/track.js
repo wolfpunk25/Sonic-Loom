@@ -50,6 +50,10 @@ function lerp(norm, [lo, hi], log = false) {
 
 const LOG_PARAMS = new Set(["filterFreq", "tone"]);
 
+// getUserMedia is used with autoGainControl off (for consistent, un-clamped
+// levels), which otherwise records very quietly on most built-in mics.
+const MIC_INPUT_GAIN = 4;
+
 export class Track {
   constructor(ctx, index, color, name) {
     this.ctx = ctx;
@@ -252,7 +256,10 @@ export class Track {
     if (this.micSource) return;
     const stream = await getMicStream();
     this.micSource = this.ctx.createMediaStreamSource(stream);
-    this.micSource.connect(this.tapeNode);
+    this.micGain = this.ctx.createGain();
+    this.micGain.gain.value = MIC_INPUT_GAIN;
+    this.micSource.connect(this.micGain);
+    this.micGain.connect(this.tapeNode);
   }
 
   async startRecord() {
