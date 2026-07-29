@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Sonic Loom</title>
+<meta name="description" content="A 4-track tape looper and sound sculptor, inspired by the Torso Electronics S4." />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#0c0c0f" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Sonic Loom" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+<link rel="icon" href="assets/icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="start-overlay" class="start-overlay">
+  <div class="start-card">
+    <h1>Sonic Loom</h1>
+    <p>A 4-track tape looper &amp; sound sculptor.</p>
+    <button id="start-btn" class="btn btn-primary">Tap to start</button>
+    <p class="start-hint">Audio needs a tap to begin on iPad.</p>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="brand">Sonic Loom</div>
+
+  <div class="view-tabs" role="tablist">
+    <button class="tab active" data-view="tracks">Tracks</button>
+    <button class="tab" data-view="mix">Mix</button>
+    <button class="tab" data-view="scenes">Scenes</button>
+  </div>
+
+  <div class="master-controls">
+    <button id="sync-btn" class="btn btn-ghost" title="Reset all track playheads to the same start point">Sync</button>
+    <div class="knob-slot" id="master-vol-knob" data-label="Master"></div>
+  </div>
+</header>
+
+<main>
+
+  <section class="track-strip" id="track-strip" aria-label="Track overview"></section>
+
+  <section id="view-tracks" class="view active">
+    <div id="track-detail"></div>
+  </section>
+
+  <section id="view-mix" class="view">
+    <h2 class="view-title">Mix</h2>
+    <div id="mix-grid" class="mix-grid"></div>
+  </section>
+
+  <section id="view-scenes" class="view">
+    <h2 class="view-title">Scenes</h2>
+    <p class="view-sub">Capture the current effect &amp; mix state across all tracks, recall it later.</p>
+    <div id="scenes-grid" class="scenes-grid"></div>
+  </section>
+
+</main>
+
+<template id="tmpl-track-mini">
+  <div class="track-mini" data-track="">
+    <div class="track-mini-color"></div>
+    <div class="track-mini-name"></div>
+    <button class="mini-btn rec" title="Record / overdub">●</button>
+    <button class="mini-btn play" title="Play / stop">▶</button>
+    <button class="mini-btn mute" title="Mute">M</button>
+    <div class="mini-meter"><div class="mini-meter-fill"></div></div>
+  </div>
+</template>
+
+<template id="tmpl-track-detail">
+  <div class="track-panel" data-track="">
+    <div class="track-panel-head">
+      <h2 class="track-title"></h2>
+      <div class="loop-status"></div>
+    </div>
+
+    <canvas class="waveform" width="900" height="120"></canvas>
+
+    <div class="stage" data-stage="material">
+      <h3>Material</h3>
+      <div class="row source-row">
+        <select class="source-select">
+          <option value="mic">Microphone</option>
+          <option value="file">Import file</option>
+          <option value="demo">Demo sample</option>
+        </select>
+        <select class="demo-select hidden">
+          <option value="kick">Kick</option>
+          <option value="hat">Hat</option>
+          <option value="pluck">Pluck</option>
+          <option value="pad">Pad loop</option>
+        </select>
+        <input type="file" class="file-input hidden" accept="audio/*" />
+        <button class="btn load-btn hidden">Load</button>
+      </div>
+      <div class="row transport-row">
+        <button class="btn btn-rec rec-btn">Record</button>
+        <button class="btn overdub-btn">Overdub</button>
+        <button class="btn play-btn">Play</button>
+        <button class="btn btn-ghost clear-btn">Clear</button>
+      </div>
+    </div>
+
+    <div class="stage-grid">
+      <div class="stage" data-stage="granular">
+        <h3>Granular</h3>
+        <div class="knob-row">
+          <div class="knob-slot" data-param="grainSize" data-label="Size"></div>
+          <div class="knob-slot" data-param="grainSpray" data-label="Spray"></div>
+          <div class="knob-slot" data-param="grainDensity" data-label="Density"></div>
+          <div class="knob-slot" data-param="grainMix" data-label="Mix"></div>
+        </div>
+      </div>
+
+      <div class="stage" data-stage="filter">
+        <h3>Filter</h3>
+        <div class="row">
+          <select class="filter-type">
+            <option value="lowpass">Low</option>
+            <option value="highpass">High</option>
+            <option value="bandpass">Band</option>
+          </select>
+          <label class="toggle-label"><input type="checkbox" class="lfo-toggle" /> LFO</label>
+        </div>
+        <div class="knob-row">
+          <div class="knob-slot" data-param="filterFreq" data-label="Cutoff"></div>
+          <div class="knob-slot" data-param="filterQ" data-label="Res"></div>
+          <div class="knob-slot" data-param="lfoRate" data-label="LFO Rate"></div>
+          <div class="knob-slot" data-param="lfoDepth" data-label="LFO Depth"></div>
+        </div>
+      </div>
+
+      <div class="stage" data-stage="color">
+        <h3>Color</h3>
+        <div class="knob-row">
+          <div class="knob-slot" data-param="drive" data-label="Drive"></div>
+          <div class="knob-slot" data-param="tone" data-label="Tone"></div>
+        </div>
+      </div>
+
+      <div class="stage" data-stage="space">
+        <h3>Space</h3>
+        <div class="row">
+          <label class="toggle-label"><input type="checkbox" class="freeze-toggle" /> Freeze</label>
+        </div>
+        <div class="knob-row">
+          <div class="knob-slot" data-param="delayTime" data-label="Delay"></div>
+          <div class="knob-slot" data-param="delayFeedback" data-label="D.Fbk"></div>
+          <div class="knob-slot" data-param="reverbAmount" data-label="Reverb"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage" data-stage="performance">
+      <h3>Performance</h3>
+      <div class="knob-row">
+        <div class="knob-slot" data-param="macro" data-label="Macro"></div>
+        <div class="knob-slot" data-param="volume" data-label="Volume"></div>
+        <div class="knob-slot" data-param="pan" data-label="Pan"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tmpl-mix-strip">
+  <div class="mix-strip" data-track="">
+    <div class="mix-strip-name"></div>
+    <div class="knob-slot" data-param="volume" data-label="Vol"></div>
+    <div class="knob-slot" data-param="pan" data-label="Pan"></div>
+    <div class="row">
+      <button class="mini-btn mute" title="Mute">M</button>
+      <button class="mini-btn solo" title="Solo">S</button>
+    </div>
+  </div>
+</template>
+
+<template id="tmpl-scene-slot">
+  <div class="scene-slot" data-scene="">
+    <div class="scene-slot-name"></div>
+    <div class="row">
+      <button class="btn scene-save">Save</button>
+      <button class="btn scene-recall">Recall</button>
+    </div>
+  </div>
+</template>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
