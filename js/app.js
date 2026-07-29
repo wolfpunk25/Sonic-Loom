@@ -1,7 +1,7 @@
 import { initAudioEngine, getContext, resumeAudio, setMasterVolume, syncAllTracks } from "./audio-engine.js";
 import { Track, PARAM_RANGES } from "./track.js";
 import { Knob } from "./ui-knob.js";
-import { loadDemoSample } from "./samples.js";
+import { loadDemoSample, DEMO_SAMPLES } from "./samples.js";
 import { SceneManager, SCENE_COUNT } from "./scenes.js";
 
 const TRACK_COLORS = ["var(--track-1)", "var(--track-2)", "var(--track-3)", "var(--track-4)"];
@@ -176,6 +176,14 @@ function renderTrackDetail(i) {
   const playBtn = node.querySelector(".play-btn");
   const clearBtn = node.querySelector(".clear-btn");
   const transportRow = node.querySelector(".transport-row");
+
+  demoSelect.innerHTML = "";
+  for (const [id, entry] of Object.entries(DEMO_SAMPLES)) {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = entry.label;
+    demoSelect.appendChild(opt);
+  }
 
   sourceSelect.value = t.sourceType;
   updateSourceUI();
