@@ -1,10 +1,11 @@
 // Shared AudioContext, master bus + master FX chain, mic access and sync — one instance for the whole app.
-import { buildFilterStage, buildColorStage, buildSpaceStage } from "./effects.js";
+import { buildFilterStage, buildColorStage, buildCrushStage, buildSpaceStage } from "./effects.js";
 
 let ctx = null;
 let masterBus = null; // all tracks sum together here (pre-FX)
 let masterFilterStage = null;
 let masterColorStage = null;
+let masterCrushStage = null;
 let masterSpaceStage = null;
 let masterGain = null; // final volume stage (post-FX)
 let micStreamPromise = null;
@@ -24,6 +25,7 @@ export async function initAudioEngine() {
   masterFilterStage.filter.Q.value = 0.7;
 
   masterColorStage = buildColorStage(ctx); // drive defaults to 0 (bypassed)
+  masterCrushStage = buildCrushStage(ctx); // defaults to 0 (transparent)
   masterSpaceStage = buildSpaceStage(ctx); // reverb/delay wet default to 0 (bypassed)
 
   masterGain = ctx.createGain();
@@ -31,7 +33,8 @@ export async function initAudioEngine() {
 
   masterBus.connect(masterFilterStage.filter);
   masterFilterStage.filter.connect(masterColorStage.input);
-  masterColorStage.output.connect(masterSpaceStage.input);
+  masterColorStage.output.connect(masterCrushStage.input);
+  masterCrushStage.output.connect(masterSpaceStage.input);
   masterSpaceStage.output.connect(masterGain);
   masterGain.connect(ctx.destination);
 
@@ -56,6 +59,10 @@ export function getMasterFilterStage() {
 
 export function getMasterColorStage() {
   return masterColorStage;
+}
+
+export function getMasterCrushStage() {
+  return masterCrushStage;
 }
 
 export function getMasterSpaceStage() {

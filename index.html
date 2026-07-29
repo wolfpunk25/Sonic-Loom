@@ -76,18 +76,25 @@
 
   <section class="master-fx">
     <h2 class="view-title">Master FX</h2>
-    <p class="view-sub">Live on the master output, for performing the mix — filter sweeps, grit, wash it out with reverb.</p>
+    <p class="view-sub">Live on the master output, for performing the mix — sweep the filter, add grit or crush, throw it into delay, or hit Freeze to hold an endless wash.</p>
     <div class="row">
       <select id="master-filter-type">
         <option value="lowpass">Low</option>
         <option value="highpass">High</option>
         <option value="bandpass">Band</option>
       </select>
+      <label class="toggle-label" title="Hold the delay buffer as an endless wash">
+        <input type="checkbox" id="master-freeze" /> Freeze
+      </label>
     </div>
     <div class="knob-row">
       <div class="knob-slot" id="master-filter-freq-knob" data-label="Cutoff"></div>
       <div class="knob-slot" id="master-filter-q-knob" data-label="Res"></div>
       <div class="knob-slot" id="master-drive-knob" data-label="Drive"></div>
+      <div class="knob-slot" id="master-crush-knob" data-label="Crush"></div>
+      <div class="knob-slot" id="master-delay-knob" data-label="Delay"></div>
+      <div class="knob-slot" id="master-delay-time-knob" data-label="D.Time"></div>
+      <div class="knob-slot" id="master-delay-fbk-knob" data-label="D.Fbk"></div>
       <div class="knob-slot" id="master-reverb-knob" data-label="Reverb"></div>
     </div>
   </section>

@@ -9,6 +9,7 @@ import {
   stopAllTracks,
   getMasterFilterStage,
   getMasterColorStage,
+  getMasterCrushStage,
   getMasterSpaceStage,
 } from "./audio-engine.js";
 import { Track, PARAM_RANGES } from "./track.js";
@@ -373,10 +374,15 @@ function formatFreq(freq) {
   return freq >= 1000 ? (freq / 1000).toFixed(1) + "k" : Math.round(freq);
 }
 
+const MASTER_DELAY_TIME_RANGE = [0.02, 1.0];
+const MASTER_DELAY_FBK_MAX = 0.92;
+const MASTER_FREEZE_FBK = 0.98;
+
 function setupMasterFx() {
   const ctx = getContext();
   const filterStage = getMasterFilterStage();
   const colorStage = getMasterColorStage();
+  const crushStage = getMasterCrushStage();
   const spaceStage = getMasterSpaceStage();
 
   const typeSelect = document.getElementById("master-filter-type");
@@ -404,6 +410,59 @@ function setupMasterFx() {
     value: 0,
     format: (v) => Math.round(v * 100) + "%",
     onChange: (v) => colorStage.setDrive(v),
+  });
+
+  new Knob(document.getElementById("master-crush-knob"), {
+    label: "Crush",
+    value: 0,
+    format: (v) => Math.round(v * 100) + "%",
+    onChange: (v) => crushStage.setAmount(v),
+  });
+
+  new Knob(document.getElementById("master-delay-knob"), {
+    label: "Delay",
+    value: spaceStage.delayWet.gain.value,
+    format: (v) => Math.round(v * 100) + "%",
+    onChange: (v) => spaceStage.delayWet.gain.setTargetAtTime(v, ctx.currentTime, 0.03),
+  });
+
+  const [dtLo, dtHi] = MASTER_DELAY_TIME_RANGE;
+  new Knob(document.getElementById("master-delay-time-knob"), {
+    label: "D.Time",
+    value: (spaceStage.delay.delayTime.value - dtLo) / (dtHi - dtLo),
+    format: (v) => Math.round((dtLo + v * (dtHi - dtLo)) * 1000) + "ms",
+    onChange: (v) =>
+      spaceStage.delay.delayTime.setTargetAtTime(dtLo + v * (dtHi - dtLo), ctx.currentTime, 0.03),
+  });
+
+  // Freeze pins feedback near unity for an endless wash. It has to cooperate
+  // with the D.Fbk knob rather than clobber it, so the knob's own value is kept
+  // here and restored when freeze is released.
+  let baseFeedback = spaceStage.delayFeedback.gain.value;
+  let frozen = false;
+  const applyFeedback = () => {
+    spaceStage.delayFeedback.gain.setTargetAtTime(
+      frozen ? MASTER_FREEZE_FBK : baseFeedback,
+      ctx.currentTime,
+      0.05
+    );
+  };
+
+  new Knob(document.getElementById("master-delay-fbk-knob"), {
+    label: "D.Fbk",
+    value: baseFeedback / MASTER_DELAY_FBK_MAX,
+    format: (v) => Math.round(v * 100) + "%",
+    onChange: (v) => {
+      baseFeedback = v * MASTER_DELAY_FBK_MAX;
+      applyFeedback();
+    },
+  });
+
+  const freezeToggle = document.getElementById("master-freeze");
+  freezeToggle.checked = false;
+  freezeToggle.addEventListener("change", () => {
+    frozen = freezeToggle.checked;
+    applyFeedback();
   });
 
   new Knob(document.getElementById("master-reverb-knob"), {
