@@ -144,6 +144,12 @@ async function toggleRecord(i) {
   } else {
     await t.startOverdub();
   }
+  if (t.micError) {
+    alert(
+      `Couldn't access the microphone on ${t.name}: ${t.micError.name || t.micError}.\n\n` +
+        "Check Settings > Privacy & Security > Microphone (or Safari's site settings) and make sure this app is allowed."
+    );
+  }
 }
 
 function togglePlay(i) {

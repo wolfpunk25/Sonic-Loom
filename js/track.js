@@ -247,9 +247,11 @@ export class Track {
     if (this.sourceType !== "mic") return;
     try {
       await this._ensureMic();
-    } catch {
-      return; // mic permission denied/unavailable — leave track untouched
+    } catch (err) {
+      this.micError = err;
+      return;
     }
+    this.micError = null;
     this.tapeNode.port.postMessage({ type: "clear" });
     this.tapeNode.port.postMessage({ type: "start-record" });
     this.isRecording = true;
@@ -259,9 +261,11 @@ export class Track {
     if (this.sourceType !== "mic" || !this.hasContent) return;
     try {
       await this._ensureMic();
-    } catch {
+    } catch (err) {
+      this.micError = err;
       return;
     }
+    this.micError = null;
     this.tapeNode.port.postMessage({ type: "start-record" });
     this.isRecording = true;
   }
