@@ -43,13 +43,21 @@ button {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: radial-gradient(circle at 50% 30%, #1a1a22, #050507);
+  /* Matches the logo artwork's own opaque background so it blends in
+     seamlessly rather than reading as a black rectangle on a gradient. */
+  background: #010102;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.start-card { text-align: center; padding: 32px; }
-.start-card h1 { font-size: 2rem; margin-bottom: 8px; }
+.start-card { text-align: center; padding: 32px; max-width: 100%; }
+.start-logo {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  height: auto;
+  margin: 0 auto;
+}
 .start-card p { color: var(--text-dim); margin: 4px 0 20px; }
 .start-hint { font-size: 0.8rem; margin-top: 16px; }
 
